@@ -19,6 +19,8 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import android.service.notification.StatusBarNotification;
+
 import android.util.Base64;
 import android.util.Log;
 
@@ -1984,7 +1986,7 @@ public class FirebasePlugin extends CordovaPlugin {
             String id = options.getString("id");
             Log.i(TAG, "Creating channel id="+id);
 
-            if(channelExists(id)){
+            if(channelExists(id) && !channelHasNotifications(id)){
                 deleteChannel(id);
             }
 
@@ -2185,6 +2187,25 @@ public class FirebasePlugin extends CordovaPlugin {
             }
         }
         return exists;
+    }
+
+    protected static boolean channelHasNotifications(String channelId){
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
+            return false;
+        }
+
+        NotificationManager nm = (NotificationManager) applicationContext.getSystemService(Context.NOTIFICATION_SERVICE);
+        StatusBarNotification[] notifications = nm.getActiveNotifications();
+
+        for(int i = 0; i < notifications.length; i++){
+            Notification notification = notifications[i].getNotification();
+
+            if(notification.getChannelId().equals(channelId)){
+                return true;
+            }
+        }
+
+        return false;
     }
 
     //
